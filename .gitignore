@@ -1,0 +1,15 @@
+
+correlation.egg-info
+checkpoints/*
+.vscode/*
+
+*.png
+*.csv
+*.pyc
+
+*.sh
+*.zip
+chairs_split.txt
+alt_cuda_corr/build/
+alt_cuda_corr/dist/
+*.flo
