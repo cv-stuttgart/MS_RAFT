@@ -137,7 +137,7 @@ class RAFT(nn.Module):
                 coords1 = coords1 + delta_flow
                 # upsample predictions
                 flow_up = self.upsample_flow(coords1 - coords0, up_mask, scale=2)
-                for i in range(len(fnet_pyramid) - index):
+                for i in range(len(fnet_pyramid) - index - 1):
                     flow_up = upflow2(flow_up)
 
                 flow_predictions.append(flow_up)

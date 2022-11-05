@@ -1,20 +1,14 @@
-# MS_RAFT
+# MS_RAFT_plus
 
 In this repository we release (for now) the inference code for our work:
 
-> **[Multi-Scale RAFT: Combining Hierarchical Concepts for Learning-Based Optical Flow Estimation](https://dx.doi.org/10.1109/ICIP46576.2022.9898048)**<br/>
-> _ICIP 2022_ <br/>
-> Azin Jahedi, Lukas Mehl, Marc Rivinius and Andrés Bruhn
+> **[High Resolution Multi-Scale RAFT (Robus Vision Challenge 2022)](https://arxiv.org/abs/2210.16900)**<br/>
+> _Robust Vision Challenge 2022_ <br/>
+> Azin Jahedi, Maximilian Luz, Lukas Mehl, Marc Rivinius and Andrés Bruhn
 
 If you find our work useful please [cite via BibTeX](CITATIONS.bib).
 
-
-## 🆕 Follow-Up Work
-
-We improved the accuracy further by extending the method and applying a modified training setup.
-Our new approach is called `MS_RAFT_plus` and won the [Robust Vision Challenge 2022](http://www.robustvision.net/).
-
-The code is available on [GitHub](https://github.com/cv-stuttgart/MS_RAFT_plus). 
+This work builds upon [`MS_RAFT`](https://github.com/cv-stuttgart/MS_RAFT).
 
 
 ## Requirements
@@ -37,7 +31,7 @@ Alternatively you can also manually install the following packages in your virtu
 
 ## Pre-Trained Checkpoints
 
-You can download our pre-trained model from the [releases page](https://github.com/cv-stuttgart/MS_RAFT/releases/tag/v1.0.0).
+You can download our pre-trained model from the [releases page](https://github.com/cv-stuttgart/MS_RAFT_plus/releases/tag/v1.0.0).
 
 
 ## Datasets
@@ -49,29 +43,36 @@ Datasets are expected to be located under `./data` in the following layout:
   │  └── dataset
   │     ├── testing/...
   │     └── training/...
-  └── sintel                    # Sintel
-     ├── test/...
-     └── training/...
+  ├── middlebury                # Middlebury
+  │  ├── test/...
+  │  │  └── img/...
+  │  └── training/...
+  │     ├── flow/...
+  │     └── img/...
+  ├── sintel                    # Sintel
+  │  ├── test/...
+  │  └── training/...
+  └── viper                     # Viper
+     ├── test/img/...
+     └── val
+        ├── flow/...
+        └── img/...
 ```
 
 
-## Running MS_RAFT
+## Running MS_RAFT_plus
 
-You can evaluate a trained model via
-```Shell
-python evaluate.py --model sintel.pth --dataset sintel
-```
-This needs about 12 GB of GPU VRAM on MPI Sintel images.
-
-If your GPU has smaller capacity, please compile the CUDA correlation module (once) via:
+For running `MS_RAFT_plus` on MPI Sintel images you need about 4 GB of GPU VRAM.
+ 
+To compile the CUDA correlation module run the following once:
 ```Shell
 cd alt_cuda_corr && python setup.py install && cd ..
 ```
-and then run:
+And then you can evaluate the pre-trained model via:
 ```Shell
-python evaluate.py --model sintel.pth --dataset sintel --cuda_corr
+python evaluate.py --model mixed.pth --dataset sintel --cuda_corr
 ```
-Using `--cuda_corr`, estimating the flow on MPI Sintel images needs about 4 GB of GPU VRAM.
+Note that the above-mentioned (with `--cuda_corr`) code performs on-demand cost computation and does not pre-compute the cost volume, because such computation is very memory intensive on high resolutions.
 
 
 ## Acknowledgement

@@ -146,6 +146,8 @@ class BasicEncoder(nn.Module):
         self.up_layer2 = self._make_layer(128, stride=1)
         self.in_planes = 128 + 96
         self.up_layer1 = self._make_layer(96, stride=1)
+        self.in_planes = 96 + 64
+        self.up_layer0 = self._make_layer(64, stride=1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -198,15 +200,22 @@ class BasicEncoder(nn.Module):
         up1layer_input = torch.cat((up2_out_resized, enc_out2), dim=1)
         up1_out = self.up_layer1(up1layer_input)
 
+        # uplayer0:
+        cur_h, cur_w = list(enc_out1.size())[-2:]
+        up1_out_resized = TF.resize(up1_out, (cur_h, cur_w))
+        up0layer_input = torch.cat((up1_out_resized, enc_out1), dim=1)
+        up0_out = self.up_layer0(up0layer_input)
+
         enc_out4 = torch.split(enc_out4, [batch_dim, batch_dim], dim=0)
         up2_out = torch.split(up2_out, [batch_dim, batch_dim], dim=0)
         up1_out = torch.split(up1_out, [batch_dim, batch_dim], dim=0)
+        up0_out = torch.split(up0_out, [batch_dim, batch_dim], dim=0)
 
-        return [enc_out4, up2_out, up1_out]
+        return [enc_out4, up2_out, up1_out, up0_out]
 
 
 class Basic_Context_Encoder(nn.Module):
-    def __init__(self, output_dim=128, norm_fn='group'):
+    def __init__(self, output_dim=256, norm_fn='group'):
         super(Basic_Context_Encoder, self).__init__()
         self.norm_fn = norm_fn
         if self.norm_fn == 'group':
@@ -232,6 +241,8 @@ class Basic_Context_Encoder(nn.Module):
         self.up_layer2 = self._make_layer(output_dim, stride=1)
         self.in_planes = 256 + 96
         self.up_layer1 = self._make_layer(output_dim, stride=1)
+        self.in_planes = 256 + 64
+        self.up_layer0 = self._make_layer(output_dim, stride=1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -245,6 +256,14 @@ class Basic_Context_Encoder(nn.Module):
     def _make_layer(self, dim, stride=1):
         layer1 = ResidualBlock(self.in_planes, dim, self.norm_fn, stride=stride)
         layer2 = ResidualBlock(dim, dim, self.norm_fn, stride=1)
+        layers = (layer1, layer2)
+
+        self.in_planes = dim
+        return nn.Sequential(*layers)
+
+    def _make_modest_layer(self, dim, intermediate_channels, stride=1):
+        layer1 = ResidualBlock(self.in_planes, intermediate_channels, self.norm_fn, stride=stride)
+        layer2 = ResidualBlock(intermediate_channels, dim, self.norm_fn, stride=1)
         layers = (layer1, layer2)
 
         self.in_planes = dim
@@ -283,4 +302,10 @@ class Basic_Context_Encoder(nn.Module):
         up1layer_input = torch.cat((up2_out_resized, enc_out2), dim=1)
         up1_out = self.up_layer1(up1layer_input)
 
-        return [enc_out4, up2_out, up1_out]
+        # uplayer 0:
+        cur_h, cur_w = list(enc_out1.size())[-2:]
+        up1_out_resized = TF.resize(up1_out, (cur_h, cur_w))
+        up0layer_input = torch.cat((up1_out_resized, enc_out1), dim=1)
+        up0_out = self.up_layer0(up0layer_input)
+
+        return [enc_out4, up2_out, up1_out, up0_out]

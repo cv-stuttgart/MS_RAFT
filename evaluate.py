@@ -17,7 +17,7 @@ from raft import RAFT
 
 
 @torch.no_grad()
-def create_kitti_submission(model, iters=[4, 8, 24], output_path='kitti_submission'):
+def create_kitti_submission(model, iters=[4, 6, 5, 10], output_path='kitti_submission'):
     """ Create submission for the Sintel leaderboard """
     model.eval()
     test_dataset = datasets.KITTI(split='testing', aug_params=None)
@@ -28,7 +28,7 @@ def create_kitti_submission(model, iters=[4, 8, 24], output_path='kitti_submissi
 
     for test_id in tqdm(range(len(test_dataset))):
         image1, image2, (frame_id,) = test_dataset[test_id]
-        padder = InputPadder(image1.shape, mode='kitti', coarsest_scale=coarsest_scale)
+        padder = InputPadder(image1.shape, coarsest_scale=coarsest_scale)
         image1, image2 = padder.pad(image1[None].cuda(), image2[None].cuda())
 
         _, flow_pr = model(image1, image2, iters=iters, test_mode=True)
@@ -39,7 +39,7 @@ def create_kitti_submission(model, iters=[4, 8, 24], output_path='kitti_submissi
 
 
 @torch.no_grad()
-def create_sintel_submission(model, iters=[10, 15, 20], warm_start=False, output_path='sintel_submission', split="test"):
+def create_sintel_submission(model, iters=[4, 6, 5, 10], warm_start=True, output_path='sintel_submission', split="test"):
     """ Create submission for the Sintel leaderboard """
     model.eval()
     coarsest_scale = 16
@@ -77,7 +77,7 @@ def create_sintel_submission(model, iters=[10, 15, 20], warm_start=False, output
 
 
 @torch.no_grad()
-def create_middlebury_submission(model, iters=[10, 15, 20], warm=False, output_path='middlebury_submission'):
+def create_middlebury_submission(model, iters=[4, 6, 5, 10], warm=True, output_path='middlebury_submission'):
     """Create submission for the Middlebury benchmark"""
 
     model.eval()
@@ -123,7 +123,7 @@ def create_middlebury_submission(model, iters=[10, 15, 20], warm=False, output_p
 
 
 @torch.no_grad()
-def create_viper_submission(model, iters=[10, 15, 20], output_path='viper_submission'):
+def create_viper_submission(model, iters=[4, 6, 5, 10], output_path='viper_submission'):
     """ Peform validation using the (official) Viper validation split"""
 
     model.eval()
@@ -154,7 +154,7 @@ def create_viper_submission(model, iters=[10, 15, 20], output_path='viper_submis
 
 
 @torch.no_grad()
-def validate_sintel(model, warm=True, iters=[10, 15, 20]):
+def validate_sintel(model, warm=True, iters=[4, 6, 5, 10]):
     """ Peform validation using the Sintel (train) split """
     model.eval()
     results = {}
@@ -216,7 +216,7 @@ def validate_sintel(model, warm=True, iters=[10, 15, 20]):
 
 
 @torch.no_grad()
-def validate_kitti(model, iters=[4, 8, 24]):
+def validate_kitti(model, iters=[4, 6, 5, 10]):
     """ Peform validation using the KITTI-2015 (train) split """
     logger = logging.getLogger("eval.kitti")
     model.eval()
@@ -256,7 +256,7 @@ def validate_kitti(model, iters=[4, 8, 24]):
 
 
 @torch.no_grad()
-def validate_middlebury(model, iters=[10, 15, 20], warm=True):
+def validate_middlebury(model, iters=[4, 6, 5, 10], warm=True):
     """ Peform validation using the (full) Middlebury dataset"""
     logger = logging.getLogger("eval.middlebury")
 
@@ -313,7 +313,7 @@ def validate_middlebury(model, iters=[10, 15, 20], warm=True):
 
 
 @torch.no_grad()
-def validate_viper(model, iters=[10, 15, 20], wauc_bins=100):
+def validate_viper(model, iters=[4, 6, 5, 10], wauc_bins=100):
     """ Peform validation using the (official) Viper validation split"""
     logger = logging.getLogger("eval.viper")
 
@@ -385,10 +385,10 @@ if __name__ == '__main__':
     parser.add_argument('--model', help="restore checkpoint")
     parser.add_argument('--dataset', help="dataset for evaluation")
     parser.add_argument('--warm', action='store_true', help="use warm start", default=True)
-    parser.add_argument('--iters', type=int, nargs='+', default=[10, 15, 20])
+    parser.add_argument('--iters', type=int, nargs='+', default=[4, 6, 5, 10])
     parser.add_argument('--lookup_pyramid_levels', type=int, default=2)
     parser.add_argument('--lookup_radius', default=4)
-    parser.add_argument('--mixed_precision', help='use mixed precision', type=str2bool, default=True)
+    parser.add_argument('--mixed_precision', help='use mixed precision', type=str2bool, default=False)
     parser.add_argument('--cuda_corr', help="use cuda kernel for on-demand cost computation", action='store_true', default=False)
 
     args = parser.parse_args()
