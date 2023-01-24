@@ -5,7 +5,7 @@ import os.path as osp
 import random
 import parse
 from glob import glob
-
+import logging
 import numpy as np
 import torch
 import torch.utils.data as data
@@ -315,3 +315,61 @@ class Viper(FlowDataset):
         self.image_list = imgs
         self.flow_list = flows
         self.extra_info = info
+
+
+def fetch_dataloader(args, phase, TRAIN_DS='C+T+K+S+H'):
+    """ Create the data loader for the corresponding trainign set """
+
+    if args["train"]["dataset"][phase] == 'chairs':
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.1, 'max_scale': 1.0, 'do_flip': True}
+        train_dataset = FlyingChairs(aug_params, split='training')
+
+    elif args["train"]["dataset"][phase] == 'things':
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.4, 'max_scale': 0.8, 'do_flip': True}
+        clean_dataset = FlyingThings3D(aug_params, dstype='frames_cleanpass')
+        final_dataset = FlyingThings3D(aug_params, dstype='frames_finalpass')
+        train_dataset = clean_dataset + final_dataset
+
+    elif args["train"]["dataset"][phase] == 'sintel':
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.2, 'max_scale': 0.6, 'do_flip': True}
+        things = FlyingThings3D(aug_params, dstype='frames_cleanpass')
+        sintel_clean = MpiSintel(aug_params, split='training', dstype='clean')
+        sintel_final = MpiSintel(aug_params, split='training', dstype='final')
+
+        if TRAIN_DS == 'C+T+K+S+H':
+            kitti = KITTI({'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.3, 'max_scale': 0.5, 'do_flip': True})
+            hd1k = HD1K({'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.5, 'max_scale': 0.2, 'do_flip': True})
+            train_dataset = 100*sintel_clean + 100*sintel_final + 200*kitti + 5*hd1k + things
+            print("************************\n Mixed Training: C+T+K+S+H \n *********************")
+
+        elif TRAIN_DS == 'C+T+K/S':
+            train_dataset = 100*sintel_clean + 100*sintel_final + things
+
+    elif args["train"]["dataset"][phase] == 'kitti':
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+        train_dataset = KITTI(aug_params, split='training')
+
+    elif args["train"]["dataset"][phase] == 'rvcft_base':
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.2, 'max_scale': 0.6, 'do_flip': True}
+        things = FlyingThings3D(args['data_on_cluster'], aug_params, dstype='frames_cleanpass')
+        sintel_clean = MpiSintel(args['data_on_cluster'], aug_params, split='training', dstype='clean')
+        sintel_final = MpiSintel(args['data_on_cluster'], aug_params, split='training', dstype='final')
+
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.3, 'max_scale': 0.5, 'do_flip': True}
+        kitti = KITTI(args['data_on_cluster'], aug_params)
+
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.5, 'max_scale': 0.2, 'do_flip': True}
+        hd1k = HD1K(args['data_on_cluster'], aug_params)
+
+        aug_params = {'crop_size': args["train"]["image_size"][phase], 'min_scale': -0.8, 'max_scale': 0.1, 'do_flip': True}
+        viper = Viper(args['data_on_cluster'], aug_params)
+
+        train_dataset = 800 * kitti + 10 * hd1k + 100 * sintel_final + 70 * sintel_clean + 12 * viper + things
+
+    train_loader = data.DataLoader(
+        train_dataset, batch_size=args["train"]["batch_size"][phase],
+        pin_memory=False, shuffle=True, num_workers=4, drop_last=True)
+
+    logger = logging.getLogger("msraft.train")
+    logger.info('Training with %d image pairs' % len(train_dataset))
+    return train_loader, len(train_dataset)

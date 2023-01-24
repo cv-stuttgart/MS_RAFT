@@ -1,0 +1,23 @@
+{
+    "name": "MS_RAFT_test",
+    "epsilon": 1e-8,
+    "mixed_precision": true,
+    "gpus": [0, 1],
+    "fnet_norm": "group",
+    "cnet_norm": "group",
+    "activate_lookup":true,
+    "grad_acc":[1,1,1],
+    "train": {
+        "iters": [4, 6, 8],
+        "eval_iters": [[10, 15, 20], [10, 15, 20], [4, 8, 24]],
+        "num_steps": [15, 15, 15],
+        "lr": [0.0004, 0.0002, 0.0002],
+        "dataset": ["chairs", "things", "sintel"],
+        "batch_size": [10, 6, 6],
+        "image_size": [[368, 496], [400, 720], [368, 768]],
+        "wdecay": [0.0001, 0.0001, 0.00001],
+        "gamma": [0.8, 0.8, 0.85],
+        "validation": ["chairs", "sintel", "sintel"],
+        "loss": ["L2", "L2", "rob_samplewise07"]
+    }
+}

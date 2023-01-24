@@ -81,9 +81,3 @@ def coords_grid(batch, ht, wd):
 def upflow2(flow, mode='bilinear'):
     new_size = (2 * flow.shape[2], 2 * flow.shape[3])
     return 2 * F.interpolate(flow, size=new_size, mode=mode, align_corners=True)
-
-
-def get_correlation_depth(lookup):
-    depth = ((2 * lookup["radius"] + 1)**2) * lookup["pyramid_levels"]
-    print("looked up positions: ", depth)
-    return depth

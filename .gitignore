@@ -1,6 +1,8 @@
-
 correlation.egg-info
 checkpoints/*
+data/
+images/*
+runs/*
 .vscode/*
 
 *.png
@@ -9,7 +11,8 @@ checkpoints/*
 
 *.sh
 *.zip
-chairs_split.txt
+job_*.txt
+eval_all.log
 alt_cuda_corr/build/
 alt_cuda_corr/dist/
 *.flo

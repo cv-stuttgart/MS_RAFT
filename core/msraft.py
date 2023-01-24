@@ -7,7 +7,7 @@ import torchvision.transforms.functional as TF
 from update import BasicUpdateBlock
 from extractor import BasicEncoder, Basic_Context_Encoder
 from corr import AlternateCorrBlock, CorrBlock
-from utils.utils import bilinear_sampler, coords_grid, upflow2, get_correlation_depth
+from utils.utils import coords_grid, upflow2
 
 try:
     autocast = torch.cuda.amp.autocast
@@ -36,13 +36,12 @@ def downflow(flow, mode='bilinear', factor=0.125):
     return rescaled_flow
 
 
-class RAFT(nn.Module):
+class MS_RAFT(nn.Module):
     def __init__(self, args):
-        super(RAFT, self).__init__()
+        super(MS_RAFT, self).__init__()
         self.args = args
 
-        self.correlation_depth = get_correlation_depth(self.args["lookup"])
-        self.lookup = self.args["lookup"]
+        self.correlation_depth = 2*81
 
         self.hidden_dim = 128
         self.context_dim = 128
@@ -63,7 +62,6 @@ class RAFT(nn.Module):
         coords0 = coords_grid(N, H//16, W//16).to(img.device)
         coords1 = coords_grid(N, H//16, W//16).to(img.device)
 
-        # optical flow computed as difference: flow = coords1 - coords0
         return coords0, coords1
 
     def get_grid(self, img, scale):
@@ -94,8 +92,8 @@ class RAFT(nn.Module):
         image1 = image1.contiguous()
         image2 = image2.contiguous()
 
-        # run the feature network
         with autocast(enabled=self.args["mixed_precision"]):
+            # run the feature network
             fnet_pyramid = self.fnet([image1, image2])
             # run the context network
             cnet_pyramid = self.cnet(image1)
@@ -113,9 +111,9 @@ class RAFT(nn.Module):
             fmap2 = fmap2.float()
 
             if self.args['cuda_corr']:
-                corr_fn = AlternateCorrBlock(fmap1, fmap2, num_levels=self.lookup["pyramid_levels"], radius=self.lookup["radius"])
+                corr_fn = AlternateCorrBlock(fmap1, fmap2)
             else:
-                corr_fn = CorrBlock(fmap1, fmap2, num_levels=self.lookup["pyramid_levels"], radius=self.lookup["radius"])
+                corr_fn = CorrBlock(fmap1, fmap2)
 
             net, inp = torch.split(cnet_pyramid[index], [128, 128], dim=1)
             net = torch.tanh(net)

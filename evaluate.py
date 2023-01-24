@@ -13,7 +13,7 @@ import datasets
 from config.config_loader import cpy_eval_args_to_config
 from utils import frame_utils
 from utils.utils import InputPadder, forward_interpolate
-from raft import RAFT
+from msraft import MS_RAFT
 
 
 @torch.no_grad()
@@ -216,6 +216,28 @@ def validate_sintel(model, warm=True, iters=[10, 15, 20]):
 
 
 @torch.no_grad()
+def validate_chairs(model, iters=[4, 8, 24]):
+    """ Perform evaluation on the FlyingChairs (validation) split """
+    model.eval()
+    epe_list = []
+
+    val_dataset = datasets.FlyingChairs(split='validation')
+
+    for val_id in tqdm(range(len(val_dataset))):
+        image1, image2, flow_gt, _ = val_dataset[val_id]
+        image1 = image1[None].cuda()
+        image2 = image2[None].cuda()
+
+        _, flow_pr = model(image1, image2, iters=iters, test_mode=True)
+        epe = torch.sum((flow_pr[0].cpu() - flow_gt)**2, dim=0).sqrt()
+        epe_list.append(epe.view(-1).numpy())
+
+    epe = np.mean(np.concatenate(epe_list))
+    print("Validation Chairs iters:%d EPE: %f" % (sum(iters), epe))
+    return {'chairs': epe}
+
+
+@torch.no_grad()
 def validate_kitti(model, iters=[4, 8, 24]):
     """ Peform validation using the KITTI-2015 (train) split """
     logger = logging.getLogger("eval.kitti")
@@ -394,7 +416,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = cpy_eval_args_to_config(args)
     print(config)
-    model = torch.nn.DataParallel(RAFT(config))
+    model = torch.nn.DataParallel(MS_RAFT(config))
     model.load_state_dict(torch.load(config["model"]))
 
     model.cuda()
