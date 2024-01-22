@@ -1,6 +1,6 @@
 # MS_RAFT
 
-In this repository we release (for now) the inference code for our work:
+In this repository we release the code for our work:
 
 > **[Multi-Scale RAFT: Combining Hierarchical Concepts for Learning-Based Optical Flow Estimation](https://dx.doi.org/10.1109/ICIP46576.2022.9898048)**<br/>
 > _ICIP 2022_ <br/>
