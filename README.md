@@ -104,6 +104,11 @@ Notes regarding the code:
 
 - Importantly, rarely the loss becomes NaN and if the network continues training it might diverge, therefore the program checks for that and exits if the loss becomes NaN. In such cases just start training again with the same config file and without changing checkpoint.txt. The porgram loads the last checkpoint automatically and resumes training from the last saved checkpoint.
 
+## License
+- Our code is licensed under the BSD 3-Clause **No Military** License. See [LICENSE](LICENSE).
+- The provided checkpoint is under the [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) license.
+
+
 ## Acknowledgement
 
 Parts of this repository are adapted from [RAFT](https://github.com/princeton-vl/RAFT) ([license](licenses/RAFT/LICENSE)).
